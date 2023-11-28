@@ -1,3 +1,4 @@
+#
 import requests,json,code,getpass
 requests.packages.urllib3.disable_warnings()
 
@@ -37,9 +38,9 @@ def connect():
         server = host['server']
         saas = host['saas']
     if host == '':
-        username = input('Username : ')# 'admin@lab.local' #input('Username : ')# 
-        password = getpass.getpass('Password : ')#'Guibaratipce225P@SSw0rd' #getpass.getpass('Password : ')#
-        server =  input('server fqdn:port : ')#'pce-225.guibarati.com:8443' #input('Server fqdn:port : ')#
+        username = input('Username : ')
+        password = getpass.getpass('Password : ')
+        server =  input('server fqdn:port : ')
         saas = 'a' #'n'
     while saas.lower() not in ['y','n']:
         saas = input('SaaS PCE - Y/N :')
