@@ -41,7 +41,7 @@ def connect():
         username = input('Username : ')
         password = getpass.getpass('Password : ')
         server =  input('server fqdn:port : ')
-        saas = 'a' #'n'
+        saas = 'a'
     while saas.lower() not in ['y','n']:
         saas = input('SaaS PCE - Y/N :')
     if saas.lower() == 'y':

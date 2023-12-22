@@ -21,6 +21,6 @@ def get_rulesets():
     with open('rulesets.json', 'r') as f:
         return json.load(f)
 
-def get_labelgroup():
+def get_labelgroups():
     with open('labelgroups.json', 'r') as f:
         return json.load(f)

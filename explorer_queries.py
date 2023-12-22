@@ -1,7 +1,7 @@
 #PCE Rule Tuning
 
 disclaimer = '''
-#No support for Label Group, Process Based Services, Virtual Services, IPv6
+#No support for, Process Based Services, Virtual Services, IPv6
 #Services covering the exact port range 49152-65535 will be counted as 1 rule_score_service
 #Multiple traffic for the same rule with any number of ports between 49152-65535 will count as 1 traffic score
 #Workloads generating traffic with multiple IP addresses may skew results.
@@ -49,7 +49,7 @@ def explorer_result_dedup(data):
             provider_ips.append(i['Provider IP'])
         service = {'Port':i['Port'],'Protocol':i['Protocol']}
         if service not in services:
-            if int(service['Port']) > 49152:
+            if int(service['Port']) >= 49152:
                 if service['Protocol'].lower == 'udp' and high_port_udp == 0:
                     services.append(service)
                     high_port_udp = 1

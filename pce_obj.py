@@ -22,7 +22,18 @@ class Label():
         self.name = name
         self.type = key
     def __repr__(self):
-        return f"Label(href='{self.href}', name='{self.name}', type={self.type})"
+        return f"Label(href='{self.href}', name='{self.name}', type='{self.type}')"
+
+
+class LabelGroup():
+    def __init__(self,href,name,labels,sub_groups):
+        self.href = href
+        self.name = name
+        self.labels = labels
+        self.sub_groups = sub_groups
+
+    def __repr__(self):
+        return f"LabelGroup(href='{self.href}', name='{self.name}', labels='{self.labels}', sub_groups = '{self.sub_groups})'"
 
 
 class Workload():
@@ -31,9 +42,13 @@ class Workload():
         self.name = name
         self.ips = ips
         self.labels = labels
+        self.rules = []
 
     def match_label_all(self,search_labels):
         return all(label in self.labels for label in search_labels)
+
+    def add_rule(self,rule):
+        self.rules.append(rule)
 
     def __repr__(self):
         return f"Workload(href='{self.href}', name='{self.name}', ips={self.ips}, labels={self.labels})"
@@ -98,18 +113,22 @@ class Service():
 
 class Rule:
     def __init__(self, href, consumer, provider,services,intrascope,obj):
+        self.workloads = []
         self.href = href
         self.consumer = consumer
         self.provider = provider
         self.services = services
         self.intrascope = intrascope
         self.consumer_scores = self.combination_score(obj,self.combination_m(obj,consumer))
-        self.provider_scores = self.combination_score(obj,self.combination_m(obj,provider))
+        self.provider_scores = self.combination_score_provider(obj,self.combination_m(obj,provider))
         self.consumer_total_score = self.total_score_m(obj,self.consumer_scores)
         self.provider_total_score = self.total_score_m(obj,self.provider_scores)
         self.service_score = self.service_score(services,obj)
         self.rule_total_score = self.rule_score(self.consumer_total_score,self.provider_total_score,self.service_score)
         
+
+    def get_workloads(self):
+        return self.workloads
 
     def service_score (self,services,obj):
         services_score = 0
@@ -154,6 +173,31 @@ class Rule:
             comb_scores.append(comb_score)
         return comb_scores
 
+    #method created to associate the workloads macthing the labels with the rule. To be used by provider combination only.
+    #it returns the same results as "combinaiton_score" but uses the get_wkld_by_labels to add workloads to self.workloads
+    def combination_score_provider(self,obj,prov_combinations):
+        comb_scores = []
+        for combination in prov_combinations:
+            comb_score = {}
+            provider_workloads = obj.get_wkld_by_labels(combination)
+            score = len(provider_workloads)
+            #if 'All Workloads' in combination and 'Any (0.0.0.0/0 and ::/0)' not in combination:
+            #    provider_workloads = obj.get_by_type(Workload)
+            #    score = len(provider_workloads)
+            for item in combination:
+                if obj.get('name',item).type == 'IPList':
+                    score = score + obj.get('name',item).num_ips
+            if 'All Workloads' in combination: #and 'Any (0.0.0.0/0 and ::/0)' in combination:
+                provider_workloads = obj.get_by_type(Workload)
+                score = len(provider_workloads)
+            comb_score['comb'] = combination
+            comb_score['score'] = score
+            comb_scores.append(comb_score)
+            for workload in provider_workloads:
+                self.workloads.append(workload)
+                workload.add_rule(self)
+        return comb_scores
+
     def combination_m(self,obj,cons_or_prov):
         labels_breakdown = self.label_breakdown_m(obj,cons_or_prov)
         values = list(labels_breakdown.values())
@@ -173,7 +217,8 @@ class Rule:
 
     def __repr__(self):
         return f"Rule(href={self.href}, consumer={self.consumer}, provider={self.provider}, services={self.services}, intrascope={self.intrascope},\
-consumer_total_score = {self.consumer_total_score}, provider_total_score = {self.provider_total_score}, service_score = {self.service_score}, rule_total_score = {self.rule_total_score})"
+consumer_total_score = {self.consumer_total_score}, provider_total_score = {self.provider_total_score}, service_score = {self.service_score},\
+rule_total_score = {self.rule_total_score})"#, workloads = {self.workloads})"
 
 
 class Ruleset():
@@ -232,10 +277,23 @@ class Objects():
             print(i)
             print('')
 
+
+def load_labelgroups(obj):
+    labelgroups = pce_ld.get_labelgroups()
+    for i in labelgroups:
+        href = i['href']
+        name = i['name']
+        labels = i['labels']
+        sub_groups = i['sub_groups']
+        obj.add(LabelGroup(href,name,labels,sub_groups))
   
 def load_rulesets(obj):
     ruleset_list = pce_ld.get_rulesets()
+    num_rulesets = len(ruleset_list)
+    counter = 0
     for i in ruleset_list:
+        counter += 1
+        print(f'ruleset {counter} of {num_rulesets}')
         href = i['href']
         name = i['name']
         scopes = scope_parser(i['scopes'],obj)
@@ -316,6 +374,8 @@ print('loading ip lists')
 load_iplists(obj)
 print('loading labels')
 load_labels(obj)
+print('loading label Groups')
+load_labelgroups(obj)
 print('loading services')
 load_services(obj)
 print('loading rulesets')

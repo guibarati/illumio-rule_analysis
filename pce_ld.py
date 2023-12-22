@@ -53,7 +53,7 @@ def get_services():
     r = pce_async_req.getdata(api_url,auth_creds,base_url)
     return(r)
 
-def get_labelgroup():
+def get_labelgroups():
     global auth_creds,server
     api_url = base_url_orgid + '/sec_policy/draft/label_groups/'
     r = pce_async_req.getdata(api_url,auth_creds,base_url)
@@ -150,7 +150,7 @@ def save_data():
     services = get_services()
     iplists = get_iplists()
     rulesets = get_rulesets()
-    labelgroups = get_labelgroup()
+    labelgroups = get_labelgroups()
 
     with open('workloads.json', 'w') as f:
         json.dump(workloads, f)
@@ -167,5 +167,5 @@ def save_data():
     with open('rulesets.json', 'w') as f:
         json.dump(rulesets, f)
     
-    with open('labelgroup.json', 'w') as f:
+    with open('labelgroups.json', 'w') as f:
         json.dump(labelgroups, f)
